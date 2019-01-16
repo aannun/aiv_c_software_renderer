@@ -1,4 +1,4 @@
-#include "aiv_renderer.h"
+#include "parser.h"
 #include <stdlib.h>
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -10,64 +10,16 @@
         Vertex_new(Vector3_new(x1, y1, z1)),         \
         Vertex_new(Vector3_new(x2, y2, z2)))
 
-
-static void Rotate(Vertex_t *vertex, Vector3_t pivot, float value)
-{
-    float X = vertex->position.x - pivot.x;
-    float Y = vertex->position.y - pivot.y;
-
-    float length = sqrt(X * X + Y * Y);
-    float normX = (float)X / length;
-    float normY = (float)Y / length;
-
-    float ang = atan2(normY, normX);
-    ang += value;
-
-    float newSin = sin(ang);
-    float newCos = cos(ang);
-
-    Y = newSin * length;
-    X = newCos * length;
-
-    vertex->position.x = X;
-    vertex->position.y = Y;
-}
-
 int main(int argc, char **argv)
 {
-    Context_t *ctx = malloc(sizeof(Context_t));// Init_Context();
+    Context_t *ctx = malloc(sizeof(Context_t));
     ctx->width = 600;
     ctx->height = 600;
     ctx->framebuffer = NULL;
     ctx->faces = NULL;
     ctx->face_count = 0;
-    ctx->camera = Vector3_zero();
+    ctx->camera = Vector3_new(0, 1.5, -5);
 
-    Triangle_t triangle = triangle(-1, 1, 0, -0.5, 1, 0, -1, 0.5, 0);
-    triangle.a.color = Vector3_new(255, 0, 0);
-    triangle.b.color = Vector3_new(0, 255, 0);
-    triangle.c.color = Vector3_new(0, 0, 255);
-
-    Triangle_t triangle2 = triangle(1, 1, 0, 0.5, 1, 0, 1, 0.5, 0);
-    triangle2.a.color = Vector3_new(255, 0, 0);
-    triangle2.b.color = Vector3_new(0, 255, 0);
-    triangle2.c.color = Vector3_new(0, 0, 255);
-
-    Triangle_t triangle3 = triangle(-1, -1, 0, -0.5, -1, 0, -1, -0.5, 0);
-    triangle3.a.color = Vector3_new(255, 0, 0);
-    triangle3.b.color = Vector3_new(0, 255, 0);
-    triangle3.c.color = Vector3_new(0, 0, 255);
-
-    Triangle_t triangle4 = triangle(1, -1, 0, 0.5, -1, 0, 1, -0.5, 0);
-    triangle4.a.color = Vector3_new(255, 0, 0);
-    triangle4.b.color = Vector3_new(0, 255, 0);
-    triangle4.c.color = Vector3_new(0, 0, 255);
-
-    Append_Vector(ctx, triangle);
-    Append_Vector(ctx, triangle2);
-    Append_Vector(ctx, triangle3);
-    Append_Vector(ctx, triangle4);
-    
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window = SDL_CreateWindow("title", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 600, 600, 0);
@@ -76,7 +28,11 @@ int main(int argc, char **argv)
 
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 600, 600);
 
-    Vector3_t pivot = Vector3_zero();
+    size_t len;
+    char *data = read_file("Stormtrooper.obj", &len);
+    if(!data)
+        printf_s("error");
+    read_obj(data, len, ctx);
 
     for (;;)
     {
@@ -97,6 +53,10 @@ int main(int argc, char **argv)
                     ctx->camera.x += 0.1;
 				else if (event.key.keysym.sym == SDLK_LEFT)
                     ctx->camera.x -= 0.1;
+                else if (event.key.keysym.sym == SDLK_w)
+                    ctx->camera.z += 0.1;
+				else if (event.key.keysym.sym == SDLK_s)
+                    ctx->camera.z -= 0.1;
 			}
         }
 

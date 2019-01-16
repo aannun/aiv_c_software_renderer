@@ -9,7 +9,7 @@ ifeq ($(OS),Windows_NT)
 	BINARY_TESTS:=$(BINARY_TESTS).exe
 endif
 
-rasterize: main.o aiv_math.o aiv_rasterizer.o
+rasterize: main.o aiv_math.o aiv_rasterizer.o parser.o
 	$(CC) -o $(BINARY) $(LDFLAGS) $^
 
 main.o: main.c
@@ -22,6 +22,9 @@ aiv_rasterizer.o: aiv_rasterizer.c aiv_rasterizer.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 aiv_renderer.o: aiv_renderer.c aiv_renderer.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+parser.o: parser.c parser.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 tests.o: tests.c

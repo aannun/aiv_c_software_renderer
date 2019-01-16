@@ -30,3 +30,11 @@ float Distance(int startX, int startY, int endX, int endY)
 {
     return sqrt(pow((endX - startX), 2) + pow((endY - startY), 2));
 }
+
+float dot_product(float *v, float *u, int n)
+{
+    float result = 0.0;
+    for (int i = 0; i < n; i++)
+        result += v[i] * u[i];
+    return result;
+}

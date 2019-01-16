@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 void *Init_Context()
 {
@@ -49,13 +50,23 @@ void PutPixel(Context_t *ctx, int x, int y, Vector3_t color)
     ctx->framebuffer[offset + 3] = color.z;
 }
 
-void PixelConverter(Vertex_t *vertex, Context_t *ctx)
+static void position_to_view(Context_t *ctx, Vertex_t *vertex)
 {
     vertex->view.x = vertex->position.x - ctx->camera.x;
     vertex->view.y = vertex->position.y - ctx->camera.y; 
+    vertex->view.z = vertex->position.z - ctx->camera.z; 
+}
 
-    vertex->raster_x = (vertex->view.x + 1) / 2 * ctx->width;
-    vertex->raster_y = ((vertex->view.y * -1) + 1) / 2 * ctx->height;
+static void view_to_raster(Context_t *ctx, Vertex_t *vertex)
+{
+    float fov = (60.0 / 2) * (3.14 / 180.0);
+    float camera_distance = tan(fov);
+
+    float projected_x = vertex->view.x / (camera_distance * vertex->view.z);
+    float projected_y = vertex->view.y / (camera_distance * vertex->view.z);
+
+    vertex->raster_x = (projected_x + 1) * (ctx->width * 0.5);
+    vertex->raster_y = ctx->height - ((projected_y + 1) * (ctx->height * 0.5));
 }
 
 void Rasterize(Context_t *ctx)
@@ -106,6 +117,49 @@ float Slope(float X0, float Y0, float X1, float Y1)
 {
     return (X1 - X0) / (Y1 - Y0);
 }
+
+/*static void DrawHalfTriangle(Context_t *ctx, Vertex_t p0, Vertex_t p1, Vertex_t p2, int slope)
+{
+    int i = 0;
+    int dist = p1.raster_y - p0.raster_y;
+    int dist2 = p2.raster_y - p0.raster_y;
+    int dist3 = 0;
+
+    for (i = p0.raster_y; i < p0.raster_y + dist; i++)
+    {
+        float gradient = 1;
+        if (p1.raster_y != p0.raster_y)
+            gradient = (i - p0.raster_y) / (float)dist;
+
+        float X0 = Lerp(p0.raster_x, p1.raster_x, gradient);
+
+        Vector3_t c0 = LerpVector3(p0.color, p1.color, gradient);
+        PutPixel(ctx, X0, i, c0);
+
+        gradient = 1;
+        if (p2.raster_y != p0.raster_y)
+            gradient = (i - p0.raster_y) / (float)dist2;
+        float X1 = Lerp(p0.raster_x, p2.raster_x, gradient);
+
+        Vector3_t c1 = LerpVector3(p0.color, p2.color, gradient);
+        PutPixel(ctx, X1, i, c1);
+
+       // ptr[slope](ctx, i, X0, X1, c1, c0);
+    }
+}
+
+static void DrawScanline(Context_t *ctx, int i, Vertex_t *V0, Vertex_t *V1, Vector3_t color, Vector3_t color2)
+{
+    int dist3 = V0->raster_x - V1->raster_x;
+    int j = 0;
+    for (j = V1->raster_y; j < V1->raster_y + dist3; j++)
+    {
+        float gradient = (j - V1->raster_x) / (float)dist3;
+        Vector3_t color3 = LerpVector3(color, color2, gradient);
+
+        PutPixel(ctx, j, i, color3);
+    }
+}*/
 
 static void DrawTriangle_Slope(Context_t *ctx, Triangle_t *triangle, void (**ptr)(Context_t *, int, int, int, Vector3_t, Vector3_t))
 {
@@ -195,9 +249,14 @@ static void FullTriangleSX(Context_t *ctx, int i, int X0, int X1, Vector3_t colo
 
 void DrawTriangle(Context_t *ctx, Triangle_t *triangle)
 {
-    PixelConverter(&triangle->a, ctx);
-    PixelConverter(&triangle->b, ctx);
-    PixelConverter(&triangle->c, ctx);
+    position_to_view(ctx, &triangle->a);
+    position_to_view(ctx, &triangle->b);
+    position_to_view(ctx, &triangle->c);
+
+    view_to_raster(ctx, &triangle->a);
+    view_to_raster(ctx, &triangle->b);
+    view_to_raster(ctx, &triangle->c);
+
     YOrderTriangle(triangle);
 
     void (*ptr[2])(Context_t *, int, int, int, Vector3_t, Vector3_t);

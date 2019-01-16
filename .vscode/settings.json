@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "aiv_renderer.h": "c"
+        "aiv_renderer.h": "c",
+        "parser.h": "c",
+        "aiv_rasterizer.h": "c"
     }
 }

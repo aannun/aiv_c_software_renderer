@@ -6,6 +6,8 @@ typedef struct Vertex
     Vector3_t normal;
     Vector3_t color;
     Vector3_t view;
+    float uv_x;
+    float uv_y;
 
     int raster_x;
     int raster_y;
@@ -40,8 +42,6 @@ Triangle_t Triangle_new(Vertex_t a, Vertex_t b, Vertex_t c);
 void Rasterize(Context_t *ctx);
 
 void PutPixel(Context_t *ctx, int x, int y, Vector3_t color);
-
-void PixelConverter(Vertex_t *vertex,  Context_t *ctx);
 
 void ClearBuffer(Context_t *ctx, size_t size);
 
